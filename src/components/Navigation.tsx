@@ -22,6 +22,8 @@ import {
   Camera,
   Landmark,
   Zap,
+  FileSpreadsheet,
+  Mail,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 
@@ -44,6 +46,9 @@ export type PageId =
   | 'kiosk'
   | 'laporan'
   | 'audit'
+  | 'google_sheets'
+  | 'gmail'
+  | 'google_docs'
   | 'config';
 
 interface NavigationProps {
@@ -79,6 +84,9 @@ export const navItems: { id: PageId; label: string; icon: React.FC<{ className?:
   { id: 'kiosk', label: 'Mode Kiosk Guru', icon: Store },
   { id: 'laporan', label: 'Cetak Laporan', icon: FileText },
   { id: 'audit', label: 'Audit Trail', icon: History },
+  { id: 'google_sheets', label: 'Google Sheets', icon: FileSpreadsheet },
+  { id: 'gmail', label: 'Gmail', icon: Mail },
+  { id: 'google_docs', label: 'Google Docs', icon: FileText },
   { id: 'config', label: 'Pengaturan', icon: Settings },
 ];
 

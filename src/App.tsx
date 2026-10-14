@@ -19,6 +19,9 @@ import { PengambilanATKPage } from './pages/PengambilanATKPage';
 import { LaporanPage } from './pages/LaporanPage';
 import { AuditPage } from './pages/AuditPage';
 import { ConfigPage } from './pages/ConfigPage';
+import { GoogleSheetsPage } from './pages/GoogleSheetsPage';
+import { GmailPage } from './pages/GmailPage';
+import { GoogleDocsPage } from './pages/GoogleDocsPage';
 import { KioskPage } from './pages/KioskPage';
 import { ScanReceiptModal } from './components/ScanReceiptModal';
 import { AiAdvisorModal } from './components/AiAdvisorModal';
@@ -221,6 +224,9 @@ const AppContent: React.FC = () => {
           {currentPage === 'pengambilan_atk' && <PengambilanATKPage onNavigate={setCurrentPage} />}
           {currentPage === 'laporan' && <LaporanPage />}
           {currentPage === 'audit' && <AuditPage />}
+          {currentPage === 'google_sheets' && <GoogleSheetsPage />}
+          {currentPage === 'gmail' && <GmailPage />}
+          {currentPage === 'google_docs' && <GoogleDocsPage />}
           {currentPage === 'config' && <ConfigPage />}
         </main>
       </div>

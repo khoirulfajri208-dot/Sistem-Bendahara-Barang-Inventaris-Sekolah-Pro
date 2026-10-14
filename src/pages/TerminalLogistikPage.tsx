@@ -334,8 +334,11 @@ export const TerminalLogistikPage: React.FC<TerminalLogistikPageProps> = ({ onEx
 
   // Clear Cart
   const handleClearCart = () => {
-    if (cart.length > 0 && confirm('Kosongkan semua daftar barang di keranjang transaksi?')) {
+    if (cart.length === 0) return;
+    if (window.confirm('Yakin ingin mengosongkan seluruh item di keranjang?')) {
       setCart([]);
+      setBarcodeInput('');
+      setSmartTextInput('');
       soundEffects.playWarning();
     }
   };
