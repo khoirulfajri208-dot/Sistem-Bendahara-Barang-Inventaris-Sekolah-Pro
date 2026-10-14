@@ -17,6 +17,7 @@ import {
   Upload,
   AlertTriangle,
   Wrench,
+  Printer,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { AssetRecord } from '../types';
@@ -27,6 +28,7 @@ import { AdvancedImportModal } from '../components/AdvancedImportModal';
 import { AdvancedExportModal } from '../components/AdvancedExportModal';
 import { QuickDamageReportModal } from '../components/QuickDamageReportModal';
 import { AssetCalibrationModal } from '../components/AssetCalibrationModal';
+import { AssetDepreciationReportModal } from '../components/AssetDepreciationReportModal';
 
 export const AsetPage: React.FC = () => {
   const { assets, items, users, suppliers, addAsset, updateAsset, deleteAsset, config } = useInventory();
@@ -45,6 +47,7 @@ export const AsetPage: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDamageModalOpen, setIsDamageModalOpen] = useState(false);
   const [isCalibrationModalOpen, setIsCalibrationModalOpen] = useState(false);
+  const [isDepreciationModalOpen, setIsDepreciationModalOpen] = useState(false);
 
   const [formData, setFormData] = useState<Omit<AssetRecord, 'id' | 'totalNilai'>>({
     kodeAset: '',
@@ -176,6 +179,8 @@ export const AsetPage: React.FC = () => {
       kondisi: 'BAIK',
       status: 'AKTIF',
       keterangan: '',
+      kodeBmdPermendagri: '',
+      nomorRegisterNup: '',
     });
     setIsModalOpen(true);
   };
@@ -204,6 +209,8 @@ export const AsetPage: React.FC = () => {
       kondisi: a.kondisi,
       status: a.status,
       keterangan: a.keterangan || '',
+      kodeBmdPermendagri: a.kodeBmdPermendagri || '',
+      nomorRegisterNup: a.nomorRegisterNup || '',
     });
     setIsModalOpen(true);
   };
@@ -265,6 +272,12 @@ export const AsetPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <button
+            onClick={() => setIsDepreciationModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition shadow-xs"
+          >
+            <Calculator className="w-3.5 h-3.5 text-emerald-700" /> Kalkulator Penyusutan
+          </button>
+          <button
             onClick={() => setIsCalibrationModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold transition shadow-xs"
           >
@@ -287,6 +300,12 @@ export const AsetPage: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold transition shadow-xs"
           >
             <QrCode className="w-3.5 h-3.5 text-teal-700" /> Cetak Stiker Massal
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
+          >
+            <Printer className="w-3.5 h-3.5 text-slate-600" /> Cetak Lembar KIB
           </button>
           <button
             onClick={() => setIsExportModalOpen(true)}
@@ -419,6 +438,20 @@ export const AsetPage: React.FC = () => {
                         <div className="text-slate-500 text-[11px]">
                           {asset.merk} {asset.nomorSeri ? `• SN: ${asset.nomorSeri}` : ''}
                         </div>
+                        {(asset.kodeBmdPermendagri || asset.nomorRegisterNup) && (
+                          <div className="flex items-center gap-1.5 mt-1 text-[10px] font-mono">
+                            {asset.nomorRegisterNup && (
+                              <span className="text-indigo-800 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded font-bold">
+                                NUP: {asset.nomorRegisterNup}
+                              </span>
+                            )}
+                            {asset.kodeBmdPermendagri && (
+                              <span className="text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                                BMD: {asset.kodeBmdPermendagri}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3 font-semibold text-slate-600">
                         {asset.kibKategori ? asset.kibKategori.replace('_', ' ') : 'KIB B'}
@@ -667,6 +700,33 @@ export const AsetPage: React.FC = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Kode BMD (Permendagri 108)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: 1.3.2.05.02.01.004"
+                    value={formData.kodeBmdPermendagri || ''}
+                    onChange={(e) => setFormData({ ...formData, kodeBmdPermendagri: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-lg border border-slate-300 font-mono text-xs focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Nomor Register / NUP
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: 0001"
+                    value={formData.nomorRegisterNup || ''}
+                    onChange={(e) => setFormData({ ...formData, nomorRegisterNup: e.target.value })}
+                    className="w-full px-3 py-1.5 rounded-lg border border-slate-300 font-mono text-xs font-bold text-indigo-700 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Spesifikasi Detail</label>
                 <textarea
@@ -835,6 +895,14 @@ export const AsetPage: React.FC = () => {
       <AssetCalibrationModal
         isOpen={isCalibrationModalOpen}
         onClose={() => setIsCalibrationModalOpen(false)}
+      />
+
+      {/* Asset Depreciation Report & Calculator Modal */}
+      <AssetDepreciationReportModal
+        isOpen={isDepreciationModalOpen}
+        onClose={() => setIsDepreciationModalOpen(false)}
+        assets={assets}
+        schoolName={config.schoolName}
       />
     </div>
   );

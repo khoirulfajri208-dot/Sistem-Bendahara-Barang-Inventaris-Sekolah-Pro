@@ -75,3 +75,20 @@ export const exportToCsv = (filename: string, rows: Record<string, any>[]) => {
   link.download = filename.endsWith('.csv') ? filename : `${filename}.csv`;
   link.click();
 };
+
+export const angkaKeTerbilang = (nilai: number): string => {
+  const bilangan = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+  const n = Math.floor(Math.abs(nilai));
+
+  if (n < 12) return bilangan[n];
+  if (n < 20) return `${angkaKeTerbilang(n - 10)} Belas`;
+  if (n < 100) return `${angkaKeTerbilang(Math.floor(n / 10))} Puluh ${angkaKeTerbilang(n % 10)}`.trim();
+  if (n < 200) return `Seratus ${angkaKeTerbilang(n - 100)}`.trim();
+  if (n < 1000) return `${angkaKeTerbilang(Math.floor(n / 100))} Ratus ${angkaKeTerbilang(n % 100)}`.trim();
+  if (n < 2000) return `Seribu ${angkaKeTerbilang(n - 1000)}`.trim();
+  if (n < 1000000) return `${angkaKeTerbilang(Math.floor(n / 1000))} Ribu ${angkaKeTerbilang(n % 1000)}`.trim();
+  if (n < 1000000000) return `${angkaKeTerbilang(Math.floor(n / 1000000))} Juta ${angkaKeTerbilang(n % 1000000)}`.trim();
+  if (n < 1000000000000) return `${angkaKeTerbilang(Math.floor(n / 1000000000))} Miliar ${angkaKeTerbilang(n % 1000000000)}`.trim();
+  return `${angkaKeTerbilang(Math.floor(n / 1000000000000))} Triliun ${angkaKeTerbilang(n % 1000000000000)}`.trim();
+};
+

@@ -125,6 +125,24 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 </button>
                 <button
                   onClick={() => {
+                    onNavigate('integrasi');
+                    onClose();
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-semibold"
+                >
+                  Rekon Nasional (SIPD)
+                </button>
+                <button
+                  onClick={() => {
+                    onNavigate('terminal_logistik');
+                    onClose();
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold"
+                >
+                  ⚡ Terminal Cepat
+                </button>
+                <button
+                  onClick={() => {
                     onNavigate('pengambilan_atk');
                     onClose();
                   }}

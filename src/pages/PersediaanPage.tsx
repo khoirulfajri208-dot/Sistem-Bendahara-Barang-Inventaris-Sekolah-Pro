@@ -9,10 +9,15 @@ import {
   XCircle,
   Coins,
   RefreshCw,
+  Printer,
+  FileText,
+  Eye,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { formatRupiah } from '../utils/format';
 import { AdvancedExportModal } from '../components/AdvancedExportModal';
+import { StockCardModal } from '../components/StockCardModal';
+import { StockSummaryItem } from '../types';
 
 export const PersediaanPage: React.FC = () => {
   const { stockSummary, config } = useInventory();
@@ -20,19 +25,19 @@ export const PersediaanPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'AMAN' | 'MINIMUM' | 'HABIS'>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [selectedItemForLedger, setSelectedItemForLedger] = useState<StockSummaryItem | null>(null);
 
   const persediaanColumns = [
     { key: 'kodeBarang', label: 'Kode Barang' },
     { key: 'namaBarang', label: 'Nama Barang' },
     { key: 'kategori', label: 'Kategori' },
-    { key: 'totalMasuk', label: 'Total Masuk' },
-    { key: 'totalKeluar', label: 'Total Keluar' },
+    { key: 'stokMasuk', label: 'Total Masuk' },
+    { key: 'stokKeluar', label: 'Total Keluar' },
     { key: 'stok', label: 'Sisa Stok Akhir' },
     { key: 'jenisSatuan', label: 'Satuan' },
     { key: 'batasMinimum', label: 'Batas Minimum' },
     { key: 'status', label: 'Status Stok' },
-    { key: 'hargaEstimasi', label: 'Harga Satuan (Rp)', format: (val: any) => formatRupiah(val) },
-    { key: 'totalNilai', label: 'Nilai Aset Stok (Rp)', format: (val: any) => formatRupiah(val) },
+    { key: 'nilaiPersediaan', label: 'Nilai Aset Stok (Rp)', format: (val: any) => formatRupiah(val) },
   ];
 
   const categories = useMemo(() => {
@@ -61,6 +66,10 @@ export const PersediaanPage: React.FC = () => {
   const countMinimum = stockSummary.filter((s) => s.status === 'MINIMUM').length;
   const countHabis = stockSummary.filter((s) => s.status === 'HABIS').length;
 
+  const handlePrintSummary = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -70,14 +79,20 @@ export const PersediaanPage: React.FC = () => {
             <Package className="w-6 h-6 text-emerald-800" /> Buku Persediaan Barang (Stock Real-Time)
           </h2>
           <p className="text-xs text-slate-500">
-            Pemantauan saldo stok persediaan otomatis: Total Masuk dikurangi Total Keluar.
+            Pemantauan saldo stok persediaan otomatis: Total Masuk dikurangi Total Keluar lengkap dengan kartu kendali stok.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsExportModalOpen(true)}
+            onClick={handlePrintSummary}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
+          >
+            <Printer className="w-3.5 h-3.5 text-slate-600" /> Cetak Buku Persediaan
+          </button>
+          <button
+            onClick={() => setIsExportModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition"
           >
             <Download className="w-3.5 h-3.5" /> Ekspor Laporan Stok
           </button>
@@ -90,7 +105,7 @@ export const PersediaanPage: React.FC = () => {
           onClick={() => setStatusFilter('ALL')}
           className={`p-3.5 rounded-2xl border text-left transition ${
             statusFilter === 'ALL'
-              ? 'border-emerald-600 bg-emerald-50/50 shadow-xs'
+              ? 'border-emerald-600 bg-emerald-50/50 shadow-xs ring-2 ring-emerald-500/20'
               : 'border-slate-200 bg-white hover:border-slate-300'
           }`}
         >
@@ -103,7 +118,7 @@ export const PersediaanPage: React.FC = () => {
           onClick={() => setStatusFilter('AMAN')}
           className={`p-3.5 rounded-2xl border text-left transition ${
             statusFilter === 'AMAN'
-              ? 'border-emerald-600 bg-emerald-50 shadow-xs'
+              ? 'border-emerald-600 bg-emerald-50 shadow-xs ring-2 ring-emerald-500/20'
               : 'border-slate-200 bg-white hover:border-slate-300'
           }`}
         >
@@ -118,7 +133,7 @@ export const PersediaanPage: React.FC = () => {
           onClick={() => setStatusFilter('MINIMUM')}
           className={`p-3.5 rounded-2xl border text-left transition ${
             statusFilter === 'MINIMUM'
-              ? 'border-amber-600 bg-amber-50 shadow-xs'
+              ? 'border-amber-600 bg-amber-50 shadow-xs ring-2 ring-amber-500/20'
               : 'border-slate-200 bg-white hover:border-slate-300'
           }`}
         >
@@ -133,7 +148,7 @@ export const PersediaanPage: React.FC = () => {
           onClick={() => setStatusFilter('HABIS')}
           className={`p-3.5 rounded-2xl border text-left transition ${
             statusFilter === 'HABIS'
-              ? 'border-red-600 bg-red-50 shadow-xs'
+              ? 'border-red-600 bg-red-50 shadow-xs ring-2 ring-red-500/20'
               : 'border-slate-200 bg-white hover:border-slate-300'
           }`}
         >
@@ -188,12 +203,13 @@ export const PersediaanPage: React.FC = () => {
                 <th className="px-4 py-3 text-center">Batas Min</th>
                 <th className="px-4 py-3 text-center">Status</th>
                 <th className="px-4 py-3 text-right">Nilai Persediaan</th>
+                <th className="px-4 py-3 text-center">Kartu Stok</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredSummary.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
+                  <td colSpan={10} className="px-4 py-8 text-center text-slate-400">
                     Tidak ada persediaan barang yang sesuai filter.
                   </td>
                 </tr>
@@ -243,6 +259,16 @@ export const PersediaanPage: React.FC = () => {
                     <td className="px-4 py-3 text-right font-bold text-slate-800">
                       {formatRupiah(item.nilaiPersediaan)}
                     </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => setSelectedItemForLedger(item)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-[11px] font-bold transition shadow-2xs"
+                        title="Buka Kartu Kendali Stok"
+                      >
+                        <FileText className="w-3 h-3 text-emerald-700" />
+                        <span>Kartu Stok</span>
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -263,6 +289,14 @@ export const PersediaanPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Kartu Stok Ledger Modal */}
+      <StockCardModal
+        item={selectedItemForLedger}
+        isOpen={Boolean(selectedItemForLedger)}
+        onClose={() => setSelectedItemForLedger(null)}
+      />
+
       {/* Advanced Export Modal */}
       <AdvancedExportModal
         isOpen={isExportModalOpen}

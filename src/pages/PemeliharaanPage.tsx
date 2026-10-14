@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { Wrench, Plus, Search, Download, Trash2, X, Check, Edit2 } from 'lucide-react';
+import { Wrench, Plus, Search, Download, Trash2, X, Check, Edit2, Printer, FileText } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { PemeliharaanRecord } from '../types';
 import { formatRupiah, formatTanggalIndo, exportToCsv } from '../utils/format';
+import { BapPemeliharaanModal } from '../components/BapPemeliharaanModal';
 
 export const PemeliharaanPage: React.FC = () => {
-  const { pemeliharaan, assets, suppliers, activeUser, addPemeliharaan, updatePemeliharaan, deletePemeliharaan } =
+  const { pemeliharaan, assets, suppliers, activeUser, addPemeliharaan, updatePemeliharaan, deletePemeliharaan, config } =
     useInventory();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<PemeliharaanRecord | null>(null);
+  const [selectedForBap, setSelectedForBap] = useState<PemeliharaanRecord | null>(null);
 
   const [formData, setFormData] = useState<Omit<PemeliharaanRecord, 'id' | 'timestamp'>>({
     tanggal: new Date().toISOString().slice(0, 10),
@@ -50,7 +52,7 @@ export const PemeliharaanPage: React.FC = () => {
       tanggal: new Date().toISOString().slice(0, 10),
       kodeAset: a?.kodeAset || '',
       namaBarang: a?.namaBarang || '',
-      jenisPemeliharaan: 'Pembersihan dan servis berkala',
+      jenisPemeliharaan: 'Pembersihan dan servis berkala proyektor/komputer',
       biaya: 0,
       penyedia: suppliers[0]?.namaToko || 'Teknisi Rekanan',
       status: 'PROSES',
@@ -97,6 +99,10 @@ export const PemeliharaanPage: React.FC = () => {
     }
   };
 
+  const handlePrintList = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -105,11 +111,17 @@ export const PemeliharaanPage: React.FC = () => {
             <Wrench className="w-6 h-6 text-emerald-800" /> Pemeliharaan &amp; Perbaikan Aset
           </h2>
           <p className="text-xs text-slate-500">
-            Catatan servis, perbaikan proyektor, komputer, pompa air, dan pemeliharaan sarpras berkala.
+            Catatan servis, perbaikan proyektor, komputer, pompa air, dan cetak Berita Acara Pemeliharaan (BAP).
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrintList}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
+          >
+            <Printer className="w-3.5 h-3.5 text-slate-600" /> Cetak Buku Servis
+          </button>
           <button
             onClick={() => exportToCsv('Riwayat_Pemeliharaan_Aset', filteredList)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
@@ -146,10 +158,10 @@ export const PemeliharaanPage: React.FC = () => {
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
               <tr>
                 <th className="px-4 py-3">Tanggal</th>
-                <th className="px-4 py-3">Kode Aset &amp; Barang</th>
-                <th className="px-4 py-3">Jenis Pemeliharaan</th>
-                <th className="px-4 py-3 text-right">Biaya Servis</th>
-                <th className="px-4 py-3">Penyedia / Teknisi</th>
+                <th className="px-4 py-3">Aset &amp; Kode</th>
+                <th className="px-4 py-3">Jenis Pekerjaan / Servis</th>
+                <th className="px-4 py-3">Teknisi / Rekanan</th>
+                <th className="px-4 py-3 text-right">Biaya (Rp)</th>
                 <th className="px-4 py-3 text-center">Status</th>
                 <th className="px-4 py-3">Petugas</th>
                 <th className="px-4 py-3 text-right">Aksi</th>
@@ -168,27 +180,25 @@ export const PemeliharaanPage: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap font-medium text-slate-700">
                       {formatTanggalIndo(p.tanggal)}
                     </td>
-                    <td className="px-4 py-3 font-semibold text-slate-900">
-                      <div>{p.namaBarang}</div>
-                      <span className="font-mono text-[10px] text-emerald-900 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                    <td className="px-4 py-3">
+                      <div className="font-bold text-slate-900">{p.namaBarang}</div>
+                      <span className="font-mono text-[10px] text-emerald-900 bg-emerald-50 px-1.5 py-0.2 rounded font-semibold border border-emerald-200">
                         {p.kodeAset}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{p.jenisPemeliharaan}</td>
-                    <td className="px-4 py-3 text-right font-bold text-slate-900">
+                    <td className="px-4 py-3 text-slate-800 font-medium">{p.jenisPemeliharaan}</td>
+                    <td className="px-4 py-3 text-slate-600">{p.penyedia}</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-slate-900">
                       {formatRupiah(p.biaya)}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{p.penyedia}</td>
                     <td className="px-4 py-3 text-center">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           p.status === 'SELESAI'
                             ? 'bg-emerald-100 text-emerald-800'
                             : p.status === 'PROSES'
-                            ? 'bg-blue-100 text-blue-800'
-                            : p.status === 'BATAL'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-amber-100 text-amber-800'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-slate-100 text-slate-700'
                         }`}
                       >
                         {p.status}
@@ -197,6 +207,13 @@ export const PemeliharaanPage: React.FC = () => {
                     <td className="px-4 py-3 text-slate-500 text-[11px]">{p.petugas}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => setSelectedForBap(p)}
+                          className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition"
+                          title="Cetak Berita Acara Servis (BAP)"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           onClick={() => handleOpenEdit(p)}
                           className="p-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition"
@@ -221,13 +238,13 @@ export const PemeliharaanPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal Form */}
+      {/* Modal Input Pemeliharaan */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             <div className="bg-emerald-900 text-white px-5 py-4 flex items-center justify-between">
               <h3 className="font-bold text-sm">
-                {editingRecord ? 'Perbarui Data Pemeliharaan' : 'Catat Pemeliharaan / Servis Aset'}
+                {editingRecord ? 'Edit Catatan Pemeliharaan' : 'Catat Pemeliharaan / Perbaikan Aset'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -240,7 +257,7 @@ export const PemeliharaanPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="p-5 space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Tanggal</label>
+                  <label className="font-bold text-slate-700 block mb-1">Tanggal Pekerjaan</label>
                   <input
                     type="date"
                     required
@@ -250,7 +267,7 @@ export const PemeliharaanPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Pilih Aset</label>
+                  <label className="font-bold text-slate-700 block mb-1">Pilih Aset Fisik</label>
                   <select
                     value={formData.kodeAset}
                     onChange={(e) => handleSelectAsset(e.target.value)}
@@ -258,7 +275,7 @@ export const PemeliharaanPage: React.FC = () => {
                   >
                     {assets.map((a) => (
                       <option key={a.id} value={a.kodeAset}>
-                        {a.kodeAset} - {a.namaBarang}
+                        {a.kodeAset} - {a.namaBarang} ({a.lokasi})
                       </option>
                     ))}
                   </select>
@@ -266,11 +283,11 @@ export const PemeliharaanPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Jenis Pemeliharaan / Kerusakan</label>
+                <label className="font-bold text-slate-700 block mb-1">Jenis Pekerjaan / Servis</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ganti fan pendingin proyektor, servis AC, instal ulang..."
+                  placeholder="Misal: Penggantian lampu proyektor, servis AC ruang guru..."
                   value={formData.jenisPemeliharaan}
                   onChange={(e) => setFormData({ ...formData, jenisPemeliharaan: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
@@ -279,47 +296,58 @@ export const PemeliharaanPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Biaya Perbaikan (Rp)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.biaya}
-                    onChange={(e) => setFormData({ ...formData, biaya: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Penyedia / Bengkel Servis</label>
+                  <label className="font-bold text-slate-700 block mb-1">Pelaksana / Bengkel / Rekanan</label>
                   <input
                     type="text"
                     required
-                    placeholder="Sentosa IT, CV Mitra, Teknisi..."
+                    placeholder="CV. Mandiri Teknik..."
                     value={formData.penyedia}
                     onChange={(e) => setFormData({ ...formData, penyedia: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Biaya Perbaikan (Rp)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={formData.biaya}
+                    onChange={(e) => setFormData({ ...formData, biaya: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Status Pekerjaan</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="PROSES">DALAM PROSES</option>
+                    <option value="SELESAI">SELESAI</option>
+                    <option value="TERTUNDA">TERTUNDA / KENDALA ONDERDIL</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Petugas Pengawas</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.petugas}
+                    onChange={(e) => setFormData({ ...formData, petugas: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Status Pengerjaan</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-semibold"
-                >
-                  <option value="DIAJUKAN">DIAJUKAN (Menunggu Persetujuan)</option>
-                  <option value="PROSES">PROSES (Sedang Dikerjakan)</option>
-                  <option value="SELESAI">SELESAI (Kondisi Aset Kembali Baik)</option>
-                  <option value="BATAL">BATAL</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Keterangan Tambahan</label>
-                <textarea
-                  rows={2}
-                  placeholder="Garansi servis, pergantian sparepart..."
+                <label className="font-bold text-slate-700 block mb-1">Keterangan / Hasil Pemeriksaan</label>
+                <input
+                  type="text"
+                  placeholder="Opsional"
                   value={formData.keterangan}
                   onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
@@ -330,21 +358,28 @@ export const PemeliharaanPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 bg-white hover:bg-slate-100 font-semibold"
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-bold shadow-xs"
+                  className="px-5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-bold"
                 >
-                  <Check className="w-4 h-4" /> Simpan Data
+                  Simpan Catatan Servis
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* BAP Pemeliharaan Modal */}
+      <BapPemeliharaanModal
+        record={selectedForBap}
+        isOpen={Boolean(selectedForBap)}
+        onClose={() => setSelectedForBap(null)}
+      />
     </div>
   );
 };

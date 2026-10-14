@@ -6,9 +6,11 @@ import { MasterBarangPage } from './pages/MasterBarangPage';
 import { SuppliersPage } from './pages/SuppliersPage';
 import { BarangMasukPage } from './pages/BarangMasukPage';
 import { BarangKeluarPage } from './pages/BarangKeluarPage';
+import { TerminalLogistikPage } from './pages/TerminalLogistikPage';
 import { PersediaanPage } from './pages/PersediaanPage';
 import { RkbsPage } from './pages/RkbsPage';
 import { AsetPage } from './pages/AsetPage';
+import { IntegrasiNasionalPage } from './pages/IntegrasiNasionalPage';
 import { MutasiPage } from './pages/MutasiPage';
 import { StockOpnamePage } from './pages/StockOpnamePage';
 import { PemeliharaanPage } from './pages/PemeliharaanPage';
@@ -32,6 +34,7 @@ import {
   Search,
   QrCode,
   Store,
+  Zap,
 } from 'lucide-react';
 import { formatTanggalIndo } from './utils/format';
 
@@ -56,7 +59,16 @@ const AppContent: React.FC = () => {
   const PageIcon = currentItem?.icon || School;
 
   if (currentPage === 'kiosk') {
-    return <KioskPage onExitKiosk={() => setCurrentPage('dashboard')} />;
+    return (
+      <KioskPage
+        onExitKiosk={() => setCurrentPage('dashboard')}
+        onOpenTerminal={() => setCurrentPage('terminal_logistik')}
+      />
+    );
+  }
+
+  if (currentPage === 'terminal_logistik') {
+    return <TerminalLogistikPage onExitTerminal={() => setCurrentPage('dashboard')} />;
   }
 
   return (
@@ -135,6 +147,17 @@ const AppContent: React.FC = () => {
               <span className="hidden sm:inline">Kiosk Guru</span>
             </button>
 
+            {/* Terminal Cepat Logistik & Kios Guru Button */}
+            <button
+              type="button"
+              onClick={() => setCurrentPage('terminal_logistik')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950 text-xs font-black transition shadow-2xs cursor-pointer"
+              title="Buka Mode Terminal Cepat & Kios Guru (Masuk/Keluar)"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-800 fill-amber-700" />
+              <span className="hidden sm:inline">Terminal &amp; Kios Guru</span>
+            </button>
+
             {/* QR Scanner */}
             <button
               type="button"
@@ -183,17 +206,19 @@ const AppContent: React.FC = () => {
             <BarangMasukPage
               onOpenScanReceipt={() => setIsScanReceiptOpen(true)}
               prefilledFromScan={prefilledScanData}
+              onNavigate={setCurrentPage}
             />
           )}
-          {currentPage === 'barang_keluar' && <BarangKeluarPage />}
+          {currentPage === 'barang_keluar' && <BarangKeluarPage onNavigate={setCurrentPage} />}
           {currentPage === 'persediaan' && <PersediaanPage />}
           {currentPage === 'rkbs' && <RkbsPage />}
           {currentPage === 'aset' && <AsetPage />}
+          {currentPage === 'integrasi' && <IntegrasiNasionalPage />}
           {currentPage === 'mutasi' && <MutasiPage />}
           {currentPage === 'stock_opname' && <StockOpnamePage />}
           {currentPage === 'pemeliharaan' && <PemeliharaanPage />}
           {currentPage === 'penghapusan' && <PenghapusanPage />}
-          {currentPage === 'pengambilan_atk' && <PengambilanATKPage />}
+          {currentPage === 'pengambilan_atk' && <PengambilanATKPage onNavigate={setCurrentPage} />}
           {currentPage === 'laporan' && <LaporanPage />}
           {currentPage === 'audit' && <AuditPage />}
           {currentPage === 'config' && <ConfigPage />}

@@ -7,29 +7,65 @@
 }
 
 @media print {
+  /* Hide non-printable UI elements */
   .no-print,
   aside,
   header,
-  button,
+  button:not(.allow-print),
   .no-print * {
     display: none !important;
   }
 
+  /* Base page setup */
   body {
     background: #ffffff !important;
     color: #000000 !important;
     padding: 0 !important;
     margin: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   main {
     padding: 0 !important;
     margin: 0 !important;
     max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Seamless modal printing */
+  .fixed.inset-0 {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .modal-dialog-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .modal-hide-print {
+    display: none !important;
+  }
+
+  /* Clean print borders */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    border-color: #cbd5e1 !important;
   }
 
   @page {
     size: A4 portrait;
-    margin: 15mm 12mm;
+    margin: 12mm 10mm;
   }
 }

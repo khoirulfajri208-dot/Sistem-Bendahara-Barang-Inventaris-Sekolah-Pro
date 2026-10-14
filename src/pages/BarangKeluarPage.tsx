@@ -9,14 +9,22 @@ import {
   Check,
   AlertCircle,
   Camera,
+  Printer,
+  FileText,
+  Zap,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { BarangKeluar } from '../types';
 import { formatTanggalIndo } from '../utils/format';
 import { AdvancedExportModal } from '../components/AdvancedExportModal';
 import { AdvancedImportModal } from '../components/AdvancedImportModal';
+import { BuktiBarangKeluarModal } from '../components/BuktiBarangKeluarModal';
 
-export const BarangKeluarPage: React.FC = () => {
+interface BarangKeluarPageProps {
+  onNavigate?: (page: any) => void;
+}
+
+export const BarangKeluarPage: React.FC<BarangKeluarPageProps> = ({ onNavigate }) => {
   const { barangKeluar, items, stockSummary, users, activeUser, addBarangKeluar, deleteBarangKeluar, config } =
     useInventory();
 
@@ -25,6 +33,7 @@ export const BarangKeluarPage: React.FC = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [stockWarning, setStockWarning] = useState<string>('');
+  const [selectedBkForDoc, setSelectedBkForDoc] = useState<BarangKeluar | null>(null);
 
   const barangKeluarColumns = [
     { key: 'tanggal', label: 'Tanggal Distribusi' },
@@ -132,6 +141,10 @@ export const BarangKeluarPage: React.FC = () => {
     }
   };
 
+  const handlePrintList = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -140,22 +153,38 @@ export const BarangKeluarPage: React.FC = () => {
             <ArrowUpFromLine className="w-6 h-6 text-orange-700" /> Distribusi &amp; Pengeluaran Barang
           </h2>
           <p className="text-xs text-slate-500">
-            Catat pemakaian barang operasional sekolah oleh guru, staf, atau ruangan kelas. Mengurangi saldo stok persediaan.
+            Catat pemakaian barang operasional sekolah oleh guru, staf, atau ruangan kelas lengkap dengan bukti pengeluaran resmi (SBPB).
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('terminal_logistik')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-black text-xs shadow-md transition"
+              title="Buka Mode Terminal Logistik Cepat"
+            >
+              <Zap className="w-4 h-4 text-amber-300 fill-amber-300" /> Mode Terminal Cepat
+            </button>
+          )}
+
+          <button
+            onClick={handlePrintList}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
+          >
+            <Printer className="w-3.5 h-3.5 text-slate-600" /> Cetak BKU Keluar
+          </button>
           <button
             onClick={() => setIsImportModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold transition shadow-xs"
           >
-            <Download className="w-3.5 h-3.5 rotate-180 text-slate-600" /> Impor (Excel / CSV)
+            <Download className="w-3.5 h-3.5 rotate-180 text-slate-600" /> Impor
           </button>
           <button
             onClick={() => setIsExportModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
           >
-            <Download className="w-3.5 h-3.5" /> Ekspor Data
+            <Download className="w-3.5 h-3.5" /> Ekspor
           </button>
           <button
             onClick={handleOpenAdd}
@@ -225,13 +254,22 @@ export const BarangKeluarPage: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 text-slate-500 text-[11px]">{bk.petugas}</td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => handleDelete(bk.id, bk.namaBarang)}
-                        className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
-                        title="Hapus"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => setSelectedBkForDoc(bk)}
+                          className="p-1.5 text-slate-500 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition"
+                          title="Cetak Surat Bukti Pengeluaran Barang (SBPB)"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(bk.id, bk.namaBarang)}
+                          className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                          title="Hapus Transaksi"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -258,14 +296,14 @@ export const BarangKeluarPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="p-5 space-y-3.5 text-xs">
               {stockWarning && (
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                  <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{stockWarning}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Tanggal Keluar</label>
+                  <label className="font-bold text-slate-700 block mb-1">Tanggal Distribusi</label>
                   <input
                     type="date"
                     required
@@ -275,50 +313,32 @@ export const BarangKeluarPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Penerima Barang</label>
-                  <input
-                    type="text"
-                    required
-                    list="user-options"
-                    placeholder="Nama Guru / Staf"
-                    value={formData.penerima}
-                    onChange={(e) => setFormData({ ...formData, penerima: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
-                  />
-                  <datalist id="user-options">
-                    {users.map((u) => (
-                      <option key={u.id} value={u.nama} />
-                    ))}
-                  </datalist>
+                  <label className="font-bold text-slate-700 block mb-1">Pilih Barang Persediaan</label>
+                  <select
+                    value={formData.kodeBarang}
+                    onChange={(e) => handleSelectItem(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-medium"
+                  >
+                    {items.map((i) => {
+                      const avail = getAvailableStock(i.kodeBarang);
+                      return (
+                        <option key={i.id} value={i.kodeBarang}>
+                          {i.kodeBarang} - {i.namaBarang} (Stok: {avail} {i.jenisSatuan})
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="font-bold text-slate-700">Pilih Barang dari Master</label>
-                  <span className="text-[11px] font-bold text-emerald-800">
-                    Sisa Stok: {getAvailableStock(formData.kodeBarang)} {formData.jenisSatuan}
-                  </span>
-                </div>
-                <select
-                  value={formData.kodeBarang}
-                  onChange={(e) => handleSelectItem(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-medium"
-                >
-                  {items.map((it) => (
-                    <option key={it.id} value={it.kodeBarang}>
-                      {it.kodeBarang} - {it.namaBarang} (Sisa: {getAvailableStock(it.kodeBarang)} {it.jenisSatuan})
-                    </option>
-                  ))}
-                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Jumlah Keluar</label>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Jumlah Dikeluarkan ({formData.jenisSatuan})
+                  </label>
                   <input
                     type="number"
-                    min="1"
+                    min={1}
                     required
                     value={formData.jumlah}
                     onChange={(e) => setFormData({ ...formData, jumlah: Number(e.target.value) })}
@@ -330,7 +350,7 @@ export const BarangKeluarPage: React.FC = () => {
                   <input
                     type="text"
                     required
-                    placeholder="Ruang Guru, Kelas 6, Lab IPA"
+                    placeholder="Ruang Guru, Kelas 1, Lab IPA..."
                     value={formData.unitRuangan}
                     onChange={(e) => setFormData({ ...formData, unitRuangan: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
@@ -339,36 +359,79 @@ export const BarangKeluarPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Tujuan / Keperluan Penggunaan</label>
-                <textarea
-                  rows={2}
+                <label className="font-bold text-slate-700 block mb-1">Nama Penerima / Guru / Staf</label>
+                <input
+                  type="text"
                   required
-                  placeholder="Kebutuhan Ujian PTS, Pembelajaran Tematik, dsb."
+                  placeholder="Nama Lengkap Guru / Staf Penerima"
+                  value={formData.penerima}
+                  onChange={(e) => setFormData({ ...formData, penerima: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Tujuan Penggunaan</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Misal: Operasional Ujian Sekolah, KBM Semester Genap..."
                   value={formData.tujuanPenggunaan}
                   onChange={(e) => setFormData({ ...formData, tujuanPenggunaan: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Petugas Penyalur</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.petugas}
+                    onChange={(e) => setFormData({ ...formData, petugas: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Keterangan Tambahan</label>
+                  <input
+                    type="text"
+                    placeholder="Opsional"
+                    value={formData.keterangan}
+                    onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
               <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 bg-white hover:bg-slate-100 font-semibold"
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-bold shadow-xs"
+                  className="px-5 py-2 rounded-xl bg-orange-700 hover:bg-orange-600 text-white font-bold"
                 >
-                  <Check className="w-4 h-4" /> Simpan Pengeluaran
+                  Simpan Barang Keluar
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Bukti Pengeluaran Barang (SBPB) Modal */}
+      <BuktiBarangKeluarModal
+        record={selectedBkForDoc}
+        isOpen={Boolean(selectedBkForDoc)}
+        onClose={() => setSelectedBkForDoc(null)}
+      />
+
       {/* Advanced Import Modal */}
       <AdvancedImportModal
         isOpen={isImportModalOpen}

@@ -17,6 +17,7 @@ import {
   Printer,
   ChevronRight,
   Sparkles,
+  Zap,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { BarangMasuk, MasterItem } from '../types';
@@ -28,6 +29,7 @@ import { AdvancedImportModal } from '../components/AdvancedImportModal';
 interface BarangMasukPageProps {
   onOpenScanReceipt: () => void;
   prefilledFromScan?: any;
+  onNavigate?: (page: any) => void;
 }
 
 interface MultiInvoiceItemRow {
@@ -43,6 +45,7 @@ interface MultiInvoiceItemRow {
 export const BarangMasukPage: React.FC<BarangMasukPageProps> = ({
   onOpenScanReceipt,
   prefilledFromScan,
+  onNavigate,
 }) => {
   const {
     barangMasuk,
@@ -419,6 +422,16 @@ export const BarangMasukPage: React.FC<BarangMasukPageProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('terminal_logistik')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs shadow-md transition"
+              title="Buka Mode Terminal Logistik Cepat"
+            >
+              <Zap className="w-4 h-4 fill-amber-950" /> Mode Terminal Cepat
+            </button>
+          )}
+
           <button
             onClick={onOpenScanReceipt}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200 text-xs font-bold transition shadow-2xs"

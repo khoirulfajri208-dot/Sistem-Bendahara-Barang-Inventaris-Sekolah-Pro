@@ -130,7 +130,7 @@ export interface AssetRecord {
   status: 'AKTIF' | 'DIMUTASI' | 'DIHAPUSKAN' | 'DALAM_PERBAIKAN';
   fotoLink?: string;
   keterangan?: string;
-  // Standar KIB & Akuntansi Aset Tetap Permendagri 47/2021
+  // Standar KIB & Akuntansi Aset Tetap Permendagri 47/2021 & 108/2016
   kibKategori?: 'KIB_A' | 'KIB_B' | 'KIB_C' | 'KIB_D' | 'KIB_E' | 'KIB_F';
   tahunPerolehan?: number;
   masaManfaat?: number; // dalam tahun untuk perhitungan depresiasi
@@ -141,6 +141,14 @@ export interface AssetRecord {
   kalibrasiTerakhir?: string;
   kalibrasiBerikutnya?: string;
   intervalKalibrasiBulan?: number;
+  // Penyelarasan SIPD-BMD, ARKAS, & DAPODIK
+  kodeBmdPermendagri?: string; // Standar Kodefikasi BMD Permendagri No. 108
+  nomorRegisterNup?: string; // Nomor Urut Pendaftaran (NUP)
+  statusPenggunaanBmd?: 'Digunakan Sendiri' | 'Dipinjamkan' | 'Dalam Sengketa' | 'Rusak Berat';
+  idDapodikSarpras?: string; // ID Sarana Dapodik Kemendikbud
+  laikPakaiDapodik?: 'Laik' | 'Tidak Laik';
+  luasM2?: number; // Luas untuk KIB A (Tanah) atau KIB C (Gedung)
+  kodeRekeningArkas?: string; // Pemetaan rekening belanja modal ARKAS (misal 5.2.02.05.01.0001)
 }
 
 export interface LaporanKerusakanRecord {

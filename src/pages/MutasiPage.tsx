@@ -10,15 +10,19 @@ import {
   Building2,
   User,
   ArrowRight,
+  Printer,
+  FileText,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { MutasiRecord } from '../types';
 import { formatTanggalIndo, exportToCsv } from '../utils/format';
+import { BastMutasiModal } from '../components/BastMutasiModal';
 
 export const MutasiPage: React.FC = () => {
-  const { mutasi, assets, users, activeUser, addMutasi, deleteMutasi } = useInventory();
+  const { mutasi, assets, users, activeUser, addMutasi, deleteMutasi, config } = useInventory();
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMutasiForBast, setSelectedMutasiForBast] = useState<MutasiRecord | null>(null);
 
   const [formData, setFormData] = useState<Omit<MutasiRecord, 'id' | 'timestamp'>>({
     tanggal: new Date().toISOString().slice(0, 10),
@@ -89,6 +93,10 @@ export const MutasiPage: React.FC = () => {
     }
   };
 
+  const handlePrintList = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -97,11 +105,17 @@ export const MutasiPage: React.FC = () => {
             <ArrowLeftRight className="w-6 h-6 text-emerald-800" /> Mutasi &amp; Pemindahan Aset
           </h2>
           <p className="text-xs text-slate-500">
-            Catat perpindahan aset antar ruangan kelas/laboratorium serta serah terima penanggung jawab baru.
+            Catat perpindahan aset antar ruangan kelas/laboratorium serta cetak Berita Acara Serah Terima (BAST Mutasi) resmi.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrintList}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
+          >
+            <Printer className="w-3.5 h-3.5 text-slate-600" /> Cetak Lembar Mutasi
+          </button>
           <button
             onClick={() => exportToCsv('Riwayat_Mutasi_Aset', filteredList)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
@@ -184,13 +198,22 @@ export const MutasiPage: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 text-slate-500 text-[11px]">{m.petugas}</td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => handleDelete(m.id, m.kodeAset)}
-                        className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
-                        title="Hapus"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => setSelectedMutasiForBast(m)}
+                          className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition"
+                          title="Cetak Berita Acara Serah Terima (BAST Mutasi)"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(m.id, m.kodeAset)}
+                          className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                          title="Hapus"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -260,62 +283,86 @@ export const MutasiPage: React.FC = () => {
                   <input
                     type="text"
                     required
-                    placeholder="Ruang Kelas 6, Lab IPA..."
+                    placeholder="Ruang Lab, Kelas 2..."
                     value={formData.keLokasi}
                     onChange={(e) => setFormData({ ...formData, keLokasi: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Penanggung Jawab Baru</label>
+                  <label className="font-bold text-slate-700 block mb-1">PJ Ruangan Baru</label>
                   <input
                     type="text"
                     required
-                    list="users-list"
-                    placeholder="Nama Guru Baru"
+                    placeholder="Nama Lengkap Guru / PJ Baru"
                     value={formData.kePj}
                     onChange={(e) => setFormData({ ...formData, kePj: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-semibold"
                   />
-                  <datalist id="users-list">
-                    {users.map((u) => (
-                      <option key={u.id} value={u.nama} />
-                    ))}
-                  </datalist>
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Alasan Pemindahan Mutasi</label>
-                <textarea
-                  rows={2}
+                <label className="font-bold text-slate-700 block mb-1">Alasan Pemindahan / Mutasi</label>
+                <input
+                  type="text"
                   required
-                  placeholder="Kebutuhan sarpras ujian asesmen, rotasi kelas..."
+                  placeholder="Misal: Penataan ulang kelas baru, peminjaman lab..."
                   value={formData.alasan}
                   onChange={(e) => setFormData({ ...formData, alasan: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Petugas Mutasi</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.petugas}
+                    onChange={(e) => setFormData({ ...formData, petugas: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Keterangan</label>
+                  <input
+                    type="text"
+                    placeholder="Opsional"
+                    value={formData.keterangan}
+                    onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
               <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 bg-white hover:bg-slate-100 font-semibold"
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-bold shadow-xs"
+                  className="px-5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-bold"
                 >
-                  <Check className="w-4 h-4" /> Simpan Mutasi
+                  Simpan Mutasi Aset
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* BAST Mutasi Modal */}
+      <BastMutasiModal
+        record={selectedMutasiForBast}
+        isOpen={Boolean(selectedMutasiForBast)}
+        onClose={() => setSelectedMutasiForBast(null)}
+      />
     </div>
   );
 };

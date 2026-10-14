@@ -11,24 +11,43 @@ import {
   X,
   Check,
   Package,
+  FileCheck,
+  Tag,
+  Printer,
+  AlertTriangle,
+  CheckSquare,
+  Square,
+  QrCode,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { MasterItem } from '../types';
 import { formatRupiah } from '../utils/format';
 import { AdvancedExportModal } from '../components/AdvancedExportModal';
 import { AdvancedImportModal } from '../components/AdvancedImportModal';
+import { CsvTemplateValidatorModal } from '../components/CsvTemplateValidatorModal';
+import { ItemBarcodeShelfTagModal } from '../components/ItemBarcodeShelfTagModal';
 
 export const MasterBarangPage: React.FC = () => {
-  const { items, addItem, updateItem, deleteItem, config } = useInventory();
+  const { items, stockSummary, addItem, updateItem, deleteItem, importMasterItemsBatch, config } =
+    useInventory();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [filterType, setFilterType] = useState<string>('ALL');
+  const [filterStockStatus, setFilterStockStatus] = useState<'ALL' | 'CRITICAL' | 'EMPTY' | 'SAFE'>('ALL');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MasterItem | null>(null);
+
+  // Shelf Tag / Barcode Modal State
+  const [itemsForTags, setItemsForTags] = useState<MasterItem[]>([]);
+  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
+
+  // Multi-Select State
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
 
   // Form State
   const [formData, setFormData] = useState<Omit<MasterItem, 'id'>>({
@@ -60,9 +79,70 @@ export const MasterBarangPage: React.FC = () => {
       const matchCategory = filterCategory === 'ALL' || item.kategori === filterCategory;
       const matchType = filterType === 'ALL' || item.tipe === filterType;
 
-      return matchQuery && matchCategory && matchType;
+      let matchStock = true;
+      if (filterStockStatus !== 'ALL') {
+        const s = stockSummary.find((summary) => summary.kodeBarang === item.kodeBarang);
+        const stockQty = s ? s.stok : 0;
+        if (filterStockStatus === 'EMPTY') {
+          matchStock = stockQty <= 0;
+        } else if (filterStockStatus === 'CRITICAL') {
+          matchStock = stockQty <= item.batasMinimum;
+        } else if (filterStockStatus === 'SAFE') {
+          matchStock = stockQty > item.batasMinimum;
+        }
+      }
+
+      return matchQuery && matchCategory && matchType && matchStock;
     });
-  }, [items, searchQuery, filterCategory, filterType]);
+  }, [items, searchQuery, filterCategory, filterType, filterStockStatus, stockSummary]);
+
+  // Handle Select All
+  const handleToggleSelectAll = () => {
+    if (selectedItemIds.size === filteredItems.length && filteredItems.length > 0) {
+      setSelectedItemIds(new Set());
+    } else {
+      setSelectedItemIds(new Set(filteredItems.map((i) => i.id)));
+    }
+  };
+
+  const handleToggleSelectItem = (id: string) => {
+    setSelectedItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handlePrintCatalog = () => {
+    window.print();
+  };
+
+  const handleOpenTagsForSelected = () => {
+    const selected = items.filter((i) => selectedItemIds.has(i.id));
+    if (!selected.length) {
+      alert('Pilih minimal 1 barang untuk mencetak label rak.');
+      return;
+    }
+    setItemsForTags(selected);
+    setIsTagModalOpen(true);
+  };
+
+  const handleOpenTagsForSingle = (item: MasterItem) => {
+    setItemsForTags([item]);
+    setIsTagModalOpen(true);
+  };
+
+  const handleBulkDelete = () => {
+    if (!selectedItemIds.size) return;
+    if (confirm(`Yakin ingin menghapus ${selectedItemIds.size} barang yang dipilih?`)) {
+      selectedItemIds.forEach((id) => deleteItem(id));
+      setSelectedItemIds(new Set());
+    }
+  };
 
   const handleOpenAdd = () => {
     setEditingItem(null);
@@ -145,18 +225,32 @@ export const MasterBarangPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handlePrintCatalog}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
+            title="Cetak Lembar Katalog Master Barang"
+          >
+            <Printer className="w-3.5 h-3.5 text-slate-600" /> Cetak Katalog
+          </button>
+          <button
+            onClick={() => setIsTemplateModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold shadow-xs transition"
+            title="Generator & Validasi Template CSV"
+          >
+            <FileCheck className="w-3.5 h-3.5 text-emerald-700" /> Template CSV
+          </button>
           <button
             onClick={() => setIsImportModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
           >
-            <Upload className="w-3.5 h-3.5 text-slate-600" /> Impor (Excel / CSV)
+            <Upload className="w-3.5 h-3.5 text-slate-600" /> Impor
           </button>
           <button
             onClick={() => setIsExportModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition"
           >
-            <Download className="w-3.5 h-3.5" /> Ekspor Data
+            <Download className="w-3.5 h-3.5" /> Ekspor
           </button>
           <button
             onClick={handleOpenAdd}
@@ -168,8 +262,8 @@ export const MasterBarangPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row gap-3 items-center">
+        <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
             type="text"
@@ -180,7 +274,7 @@ export const MasterBarangPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
@@ -202,8 +296,49 @@ export const MasterBarangPage: React.FC = () => {
             <option value="HABIS_PAKAI">Habis Pakai (ATK/BHP)</option>
             <option value="ASET_TETAP">Aset Tetap / Modal</option>
           </select>
+
+          <select
+            value={filterStockStatus}
+            onChange={(e) => setFilterStockStatus(e.target.value as any)}
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold"
+          >
+            <option value="ALL">Status Stok (Semua)</option>
+            <option value="CRITICAL">⚠️ Stok Kritis / &le; Min</option>
+            <option value="EMPTY">❌ Stok Kosong (0)</option>
+            <option value="SAFE">✅ Stok Aman</option>
+          </select>
         </div>
       </div>
+
+      {/* Bulk Action Banner */}
+      {selectedItemIds.size > 0 && (
+        <div className="bg-emerald-950 text-white p-3 px-4 rounded-xl flex items-center justify-between text-xs animate-in fade-in shadow-md">
+          <div className="flex items-center gap-2">
+            <CheckSquare className="w-4 h-4 text-emerald-400" />
+            <span className="font-bold">{selectedItemIds.size} barang terpilih</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenTagsForSelected}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-white font-bold transition shadow-xs"
+            >
+              <Tag className="w-3.5 h-3.5" /> Cetak Label Rak Terpilih
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-700 hover:bg-red-600 text-white font-bold transition shadow-xs"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Hapus Terpilih
+            </button>
+            <button
+              onClick={() => setSelectedItemIds(new Set())}
+              className="text-white/80 hover:text-white px-2 py-1"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Items Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
@@ -211,13 +346,26 @@ export const MasterBarangPage: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
               <tr>
+                <th className="px-3 py-3 w-8 text-center">
+                  <button
+                    type="button"
+                    onClick={handleToggleSelectAll}
+                    className="text-slate-500 hover:text-slate-800"
+                    title="Pilih Semua"
+                  >
+                    {selectedItemIds.size > 0 && selectedItemIds.size === filteredItems.length ? (
+                      <CheckSquare className="w-4 h-4 text-emerald-700" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                  </button>
+                </th>
                 <th className="px-4 py-3">Kode</th>
                 <th className="px-4 py-3">Nama Barang</th>
                 <th className="px-4 py-3">Kategori</th>
                 <th className="px-4 py-3">Satuan</th>
                 <th className="px-4 py-3">Tipe</th>
-                <th className="px-4 py-3 text-center">Batas Min</th>
-                <th className="px-4 py-3">Rekening RKAS</th>
+                <th className="px-4 py-3 text-center">Stok Fisik / Min</th>
                 <th className="px-4 py-3">Lokasi Default</th>
                 <th className="px-4 py-3 text-right">Aksi</th>
               </tr>
@@ -230,56 +378,104 @@ export const MasterBarangPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/80 transition">
-                    <td className="px-4 py-3 font-mono font-bold text-emerald-900">{item.kodeBarang}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-900">{item.namaBarang}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium">
-                        {item.kategori}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{item.jenisSatuan}</td>
-                    <td className="px-4 py-3">
-                      {item.tipe === 'HABIS_PAKAI' ? (
-                        <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold text-[10px]">
-                          Habis Pakai
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-semibold text-[10px]">
-                          Aset Tetap
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center font-bold text-slate-700">{item.batasMinimum}</td>
-                    <td className="px-4 py-3 font-mono text-[11px] text-slate-500">{item.kodeRekeningRkas}</td>
-                    <td className="px-4 py-3 text-slate-600 truncate max-w-[140px]">{item.lokasiDefault}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                filteredItems.map((item) => {
+                  const s = stockSummary.find((summary) => summary.kodeBarang === item.kodeBarang);
+                  const stockQty = s ? s.stok : 0;
+                  const isSelected = selectedItemIds.has(item.id);
+
+                  return (
+                    <tr
+                      key={item.id}
+                      className={`hover:bg-slate-50/80 transition ${isSelected ? 'bg-emerald-50/40' : ''}`}
+                    >
+                      <td className="px-3 py-3 text-center">
                         <button
-                          onClick={() => handleOpenEdit(item)}
-                          className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition"
-                          title="Edit Barang"
+                          type="button"
+                          onClick={() => handleToggleSelectItem(item.id)}
+                          className="text-slate-400 hover:text-emerald-700"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          {isSelected ? (
+                            <CheckSquare className="w-4 h-4 text-emerald-700" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
                         </button>
-                        <button
-                          onClick={() => handleDelete(item.id, item.namaBarang)}
-                          className="p-1.5 text-slate-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
-                          title="Hapus Barang"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-4 py-3 font-mono font-bold text-emerald-900">{item.kodeBarang}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-900">{item.namaBarang}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium">
+                          {item.kategori}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{item.jenisSatuan}</td>
+                      <td className="px-4 py-3">
+                        {item.tipe === 'HABIS_PAKAI' ? (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold text-[10px]">
+                            Habis Pakai
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-semibold text-[10px]">
+                            Aset Tetap
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span
+                            className={`font-bold text-xs px-2 py-0.5 rounded ${
+                              stockQty <= 0
+                                ? 'bg-red-100 text-red-800'
+                                : stockQty <= item.batasMinimum
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
+                            {stockQty}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">/ min {item.batasMinimum}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 truncate max-w-[140px]">{item.lokasiDefault}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => handleOpenTagsForSingle(item)}
+                            className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition"
+                            title="Cetak Label Rak & Barcode/QR"
+                          >
+                            <Tag className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenEdit(item)}
+                            className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition"
+                            title="Edit Barang"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item.id, item.namaBarang)}
+                            className="p-1.5 text-slate-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                            title="Hapus Barang"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
         <div className="p-3 border-t border-slate-100 bg-slate-50/60 text-xs text-slate-500 flex justify-between items-center">
-          <span>Menampilkan {filteredItems.length} dari {items.length} master barang</span>
+          <span>
+            Menampilkan {filteredItems.length} dari {items.length} master barang
+          </span>
+          {selectedItemIds.size > 0 && (
+            <span className="font-bold text-emerald-800">{selectedItemIds.size} barang terpilih</span>
+          )}
         </div>
       </div>
 
@@ -308,7 +504,7 @@ export const MasterBarangPage: React.FC = () => {
                     required
                     value={formData.kodeBarang}
                     onChange={(e) => setFormData({ ...formData, kodeBarang: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono"
                   />
                 </div>
                 <div>
@@ -316,7 +512,7 @@ export const MasterBarangPage: React.FC = () => {
                   <select
                     value={formData.kategori}
                     onChange={(e) => setFormData({ ...formData, kategori: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-medium"
                   >
                     <option value="ATK">ATK</option>
                     <option value="Kebersihan">Kebersihan</option>
@@ -336,81 +532,91 @@ export const MasterBarangPage: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Kertas HVS A4 70 Gram (PaperOne)"
+                  placeholder="Misal: Kertas HVS A4 70gr Sinar Dunia"
                   value={formData.namaBarang}
                   onChange={(e) => setFormData({ ...formData, namaBarang: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Jenis Satuan</label>
                   <input
                     type="text"
                     required
-                    placeholder="Rim, Pcs, Box, Pack, Buah, Unit"
+                    placeholder="Rim, Pcs, Box..."
                     value={formData.jenisSatuan}
                     onChange={(e) => setFormData({ ...formData, jenisSatuan: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Tipe Barang</label>
+                  <label className="font-bold text-slate-700 block mb-1">Tipe Klasifikasi</label>
                   <select
                     value={formData.tipe}
                     onChange={(e) => setFormData({ ...formData, tipe: e.target.value as any })}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="HABIS_PAKAI">Habis Pakai (ATK / Bahan)</option>
-                    <option value="ASET_TETAP">Aset Tetap / Peralatan Modal</option>
+                    <option value="HABIS_PAKAI">Habis Pakai (ATK)</option>
+                    <option value="ASET_TETAP">Aset Tetap (Modal)</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Batas Stok Minimum</label>
+                  <label className="font-bold text-slate-700 block mb-1">Batas Minimum</label>
                   <input
                     type="number"
-                    min="0"
+                    min={0}
+                    required
                     value={formData.batasMinimum}
                     onChange={(e) => setFormData({ ...formData, batasMinimum: Number(e.target.value) })}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Kode Rekening RKAS</label>
                   <input
                     type="text"
-                    placeholder="Contoh: 5.2.2.01.01"
                     value={formData.kodeRekeningRkas}
                     onChange={(e) => setFormData({ ...formData, kodeRekeningRkas: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Lokasi Simpan Default</label>
+                  <input
+                    type="text"
+                    value={formData.lokasiDefault}
+                    onChange={(e) => setFormData({ ...formData, lokasiDefault: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Lokasi Default Simpan</label>
-                  <input
-                    type="text"
-                    placeholder="Gudang Persediaan / Lab"
-                    value={formData.lokasiDefault}
-                    onChange={(e) => setFormData({ ...formData, lokasiDefault: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Estimasi Harga Satuan (Rp)</label>
+                  <label className="font-bold text-slate-700 block mb-1">Harga Estimasi (Rp)</label>
                   <input
                     type="number"
-                    min="0"
+                    min={0}
                     value={formData.hargaEstimasi}
                     onChange={(e) => setFormData({ ...formData, hargaEstimasi: Number(e.target.value) })}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
                   />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="AKTIF">AKTIF</option>
+                    <option value="NONAKTIF">NONAKTIF</option>
+                  </select>
                 </div>
               </div>
 
@@ -418,21 +624,43 @@ export const MasterBarangPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 bg-white hover:bg-slate-100 font-semibold"
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-bold shadow-xs"
+                  className="px-5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-bold"
                 >
-                  <Check className="w-4 h-4" /> Simpan Data
+                  Simpan Master Barang
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Item Barcode & Shelf Tag Modal */}
+      <ItemBarcodeShelfTagModal
+        items={itemsForTags}
+        isOpen={isTagModalOpen}
+        onClose={() => {
+          setIsTagModalOpen(false);
+          setItemsForTags([]);
+        }}
+      />
+
+      {/* Advanced Export Modal */}
+      <AdvancedExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        title="Ekspor Master Barang Sekolah"
+        defaultFilename="Master_Barang_Sekolah"
+        data={items}
+        filteredData={filteredItems}
+        availableColumns={masterBarangColumns}
+        schoolConfig={config}
+      />
 
       {/* Advanced Import Modal */}
       <AdvancedImportModal
@@ -441,16 +669,14 @@ export const MasterBarangPage: React.FC = () => {
         type="MASTER_BARANG"
       />
 
-      {/* Advanced Export Modal */}
-      <AdvancedExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        title="Ekspor Data Master Barang"
-        defaultFilename="Master_Barang_Sekolah"
-        data={items}
-        filteredData={filteredItems}
-        availableColumns={masterBarangColumns}
-        schoolConfig={config}
+      {/* Template CSV Generator & Validator Modal */}
+      <CsvTemplateValidatorModal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        existingItems={items}
+        onImportValidRows={(validRows: any[]) => {
+          importMasterItemsBatch(validRows);
+        }}
       />
     </div>
   );

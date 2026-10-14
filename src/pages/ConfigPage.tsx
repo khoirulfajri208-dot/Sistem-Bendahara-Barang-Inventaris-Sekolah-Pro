@@ -6,23 +6,16 @@ import {
   Download,
   Upload,
   School,
-  UserCheck,
   ShieldAlert,
   Check,
-  Plus,
-  Trash2,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
-import { UserEmployee } from '../types';
 import { CloudSyncBackupPanel } from '../components/CloudSyncBackupPanel';
 
 export const ConfigPage: React.FC = () => {
   const {
     config,
     updateConfig,
-    users,
-    addUser,
-    deleteUser,
     resetToDefaultData,
     exportDatabaseToJson,
     importDatabaseFromJson,
@@ -30,17 +23,6 @@ export const ConfigPage: React.FC = () => {
 
   const [formData, setFormData] = useState({ ...config });
   const [saveSuccess, setSaveSuccess] = useState(false);
-
-  // New User Form State
-  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const [newUser, setNewUser] = useState<Omit<UserEmployee, 'id'>>({
-    nip: '',
-    nama: '',
-    email: '',
-    jabatan: 'Guru Kelas',
-    role: 'GURU',
-    status: 'AKTIF',
-  });
 
   const handleSaveConfig = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,24 +58,6 @@ export const ConfigPage: React.FC = () => {
       }
     };
     reader.readAsText(file);
-  };
-
-  const handleAddUserSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUser.nama.trim() || !newUser.nip.trim()) {
-      alert('Nama dan NIP wajib diisi.');
-      return;
-    }
-    addUser(newUser);
-    setNewUser({
-      nip: '',
-      nama: '',
-      email: '',
-      jabatan: 'Guru Kelas',
-      role: 'GURU',
-      status: 'AKTIF',
-    });
-    setIsAddUserOpen(false);
   };
 
   return (
@@ -312,48 +276,6 @@ export const ConfigPage: React.FC = () => {
         </div>
       </form>
 
-      {/* Teachers and Employees Management */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4 text-xs">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-          <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-            <UserCheck className="w-4 h-4 text-emerald-800" /> Database Guru &amp; Pegawai ({users.length})
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsAddUserOpen(true)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 font-bold hover:bg-emerald-100 transition"
-          >
-            <Plus className="w-3.5 h-3.5" /> Tambah Pegawai
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-          {users.map((u) => (
-            <div
-              key={u.id}
-              className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between"
-            >
-              <div>
-                <div className="font-bold text-slate-900">{u.nama}</div>
-                <div className="text-[10px] text-slate-500 font-mono">NIP: {u.nip}</div>
-                <div className="text-[11px] text-emerald-700 font-medium">{u.jabatan}</div>
-              </div>
-              {users.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm(`Hapus pegawai ${u.nama}?`)) deleteUser(u.id);
-                  }}
-                  className="p-1 text-slate-400 hover:text-red-700 rounded"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Backup and Restore Box */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4 text-xs">
         <div className="flex items-center gap-2 text-sm font-bold text-slate-900 pb-2 border-b border-slate-200">
@@ -396,82 +318,6 @@ export const ConfigPage: React.FC = () => {
 
       {/* Cloud Sync & Automated Backup Panel */}
       <CloudSyncBackupPanel />
-
-      {/* Modal Add User */}
-      {isAddUserOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200 p-5 space-y-3.5 text-xs">
-            <div className="font-bold text-sm text-slate-900 border-b pb-2">
-              Tambah Guru / Pegawai Baru
-            </div>
-
-            <form onSubmit={handleAddUserSubmit} className="space-y-3">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Nama Lengkap &amp; Gelar</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Hendra Wijaya, S.Pd."
-                  value={newUser.nama}
-                  onChange={(e) => setNewUser({ ...newUser, nama: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">NIP / NUPTK</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="19920101 201901 1 001"
-                  value={newUser.nip}
-                  onChange={(e) => setNewUser({ ...newUser, nip: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Jabatan / Tugas</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Guru Kelas 4, Tenaga Perpustakaan..."
-                  value={newUser.jabatan}
-                  onChange={(e) => setNewUser({ ...newUser, jabatan: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Alamat Email (opsional)</label>
-                <input
-                  type="email"
-                  placeholder="guru@sd.belajar.id"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAddUserOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-800 text-white font-bold"
-                >
-                  Simpan Pegawai
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

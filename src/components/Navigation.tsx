@@ -17,10 +17,11 @@ import {
   Settings,
   Sparkles,
   School,
-  UserCheck,
   CalendarDays,
   QrCode,
   Camera,
+  Landmark,
+  Zap,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 
@@ -30,9 +31,11 @@ export type PageId =
   | 'supplier'
   | 'barang_masuk'
   | 'barang_keluar'
+  | 'terminal_logistik'
   | 'persediaan'
   | 'rkbs'
   | 'aset'
+  | 'integrasi'
   | 'mutasi'
   | 'stock_opname'
   | 'pemeliharaan'
@@ -58,6 +61,7 @@ export const navItems: { id: PageId; label: string; icon: React.FC<{ className?:
   { id: 'supplier', label: 'Penyedia / Toko', icon: Store },
   { id: 'barang_masuk', label: 'Barang Masuk', icon: ArrowDownToLine },
   { id: 'barang_keluar', label: 'Barang Keluar', icon: ArrowUpFromLine },
+  { id: 'terminal_logistik', label: 'Terminal & Kios Guru', icon: Zap },
   {
     id: 'persediaan',
     label: 'Persediaan Stok',
@@ -66,6 +70,7 @@ export const navItems: { id: PageId; label: string; icon: React.FC<{ className?:
   },
   { id: 'rkbs', label: 'Rencana RKBS/RKAS', icon: CalendarDays },
   { id: 'aset', label: 'Aset / Inventaris', icon: Building2 },
+  { id: 'integrasi', label: 'Rekonsiliasi Nasional', icon: Landmark },
   { id: 'mutasi', label: 'Mutasi Aset', icon: ArrowLeftRight },
   { id: 'stock_opname', label: 'Stock Opname', icon: ClipboardCheck },
   { id: 'pemeliharaan', label: 'Pemeliharaan', icon: Wrench },
@@ -86,7 +91,6 @@ export const Navigation: React.FC<NavigationProps> = ({
   setIsMobileMenuOpen,
 }) => {
   const context = useInventory();
-  const { config, activeUser, users, setActiveUser } = context;
 
   const handleNavClick = (page: PageId) => {
     onSelectPage(page);
@@ -122,8 +126,8 @@ export const Navigation: React.FC<NavigationProps> = ({
                   PRO
                 </span>
               </div>
-              <div className="text-[11px] text-emerald-300 font-medium truncate max-w-[150px]" title={config.schoolName}>
-                {config.schoolName}
+              <div className="text-[11px] text-emerald-300 font-medium truncate max-w-[150px]" title={context.config.schoolName}>
+                {context.config.schoolName}
               </div>
             </div>
           </div>
@@ -201,34 +205,6 @@ export const Navigation: React.FC<NavigationProps> = ({
             );
           })}
         </nav>
-
-        {/* User Profile Bar & Role Switcher */}
-        <div className="p-3 border-t border-emerald-900/80 bg-emerald-950">
-          <div className="bg-emerald-900/50 rounded-xl p-2.5 border border-emerald-800/60">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] uppercase font-bold text-emerald-300/80 flex items-center gap-1">
-                <UserCheck className="w-3 h-3 text-emerald-400" /> Pengguna Aktif
-              </span>
-              <span className="text-[9px] bg-emerald-800 text-emerald-200 px-1.5 py-0.2 rounded font-bold">
-                {activeUser.role}
-              </span>
-            </div>
-            <select
-              value={activeUser.id}
-              onChange={(e) => {
-                const found = users.find((u) => u.id === e.target.value);
-                if (found) setActiveUser(found);
-              }}
-              className="w-full bg-emerald-950 text-white text-xs border border-emerald-700/60 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-            >
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.nama} ({u.role})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
       </aside>
     </>
   );

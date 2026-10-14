@@ -129,6 +129,7 @@ interface InventoryContextType {
   updateLaporanKerusakan: (id: string, lpr: Partial<LaporanKerusakanRecord>) => void;
   importMasterItemsBatch: (newItems: Omit<MasterItem, 'id'>[]) => number;
   importAssetsBatch: (newAssets: Omit<AssetRecord, 'id' | 'totalNilai'>[]) => number;
+  batchUpdateAssets: (updatedAssets: AssetRecord[]) => void;
 
   addUser: (user: Omit<UserEmployee, 'id'>) => string;
   updateUser: (id: string, user: Partial<UserEmployee>) => void;
@@ -900,6 +901,11 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     return count;
   };
 
+  const batchUpdateAssets = (updatedList: AssetRecord[]) => {
+    setAssets(updatedList);
+    logAudit('UPDATE', 'ASET', 'BATCH_UPDATE', `Sinkronisasi massal ${updatedList.length} aset sekolah (Permendagri 108 / NUP / Dapodik).`);
+  };
+
   // Reset to default
   const resetToDefaultData = () => {
     setConfig(initialSchoolConfig);
@@ -1037,6 +1043,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
         updateLaporanKerusakan,
         importMasterItemsBatch,
         importAssetsBatch,
+        batchUpdateAssets,
         addUser,
         updateUser,
         deleteUser,

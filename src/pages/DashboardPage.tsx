@@ -15,6 +15,9 @@ import {
   Wrench,
   ArrowRight,
   Calendar,
+  Landmark,
+  FileSpreadsheet,
+  Zap,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { formatRupiah, formatTanggalIndo } from '../utils/format';
@@ -24,6 +27,7 @@ import { BudgetSummaryCard } from '../components/BudgetSummaryCard';
 import { ReorderPointNotificationBanner } from '../components/ReorderPointNotificationBanner';
 import { DemandPredictionPanel } from '../components/DemandPredictionPanel';
 import { SmartBudgetAllocationPanel } from '../components/SmartBudgetAllocationPanel';
+import { BudgetProjectionPanel } from '../components/BudgetProjectionPanel';
 
 interface DashboardPageProps {
   onNavigate: (page: PageId) => void;
@@ -83,8 +87,51 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             >
               <Sparkles className="w-4 h-4 text-emerald-300" /> Analisis Inventaris AI
             </button>
+            <button
+              onClick={() => onNavigate('integrasi')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-teal-950 font-extrabold text-xs shadow-md transition"
+            >
+              <Landmark className="w-4 h-4" /> Rekonsiliasi Nasional (SIPD / ARKAS)
+            </button>
+            <button
+              onClick={() => onNavigate('terminal_logistik')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs shadow-md transition"
+            >
+              <Zap className="w-4 h-4 fill-amber-950" /> Mode Terminal Masuk/Keluar
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* Spotlight: Penyelarasan Standar Nasional Permendagri 108 / SIPD & ARKAS */}
+      <div className="bg-gradient-to-r from-teal-900 to-emerald-900 text-white p-4 md:p-5 rounded-2xl shadow-sm border border-emerald-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5">
+          <div className="p-2.5 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-500/30 shrink-0">
+            <Landmark className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-teal-400 text-teal-950 uppercase tracking-wider">
+                Fitur Integrasi Nasional Aktif
+              </span>
+              <span className="text-xs text-teal-200">Permendagri 108 • ARKAS BOSP • Dapodik</span>
+            </div>
+            <h3 className="font-extrabold text-sm md:text-base mt-1">
+              Sinkronisasi SIPD-BMD / SIMBADA &amp; Berita Acara Rekonsiliasi BOS
+            </h3>
+            <p className="text-xs text-teal-100/90 mt-0.5 leading-relaxed max-w-2xl">
+              Cetak Berita Acara Rekonsiliasi Belanja Modal triwulanan, ekspor format SIPD-BMD BPKAD, serta sinkronisasikan kodefikasi aset ke standar nasional dengan 1 klik.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => onNavigate('integrasi')}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-emerald-950 font-bold text-xs shadow hover:bg-teal-50 transition shrink-0"
+        >
+          <span>Buka Pusat Rekonsiliasi</span>
+          <ArrowRight className="w-4 h-4 text-emerald-800" />
+        </button>
       </div>
 
       {/* Sistem Notifikasi Otomatis Reorder Point (Batas Minimum Stok) */}
@@ -232,6 +279,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       {/* Smart Budget Allocation Panel */}
       <SmartBudgetAllocationPanel onNavigate={onNavigate} />
+
+      {/* Proyeksi Anggaran Mendatang (Simple Linear Regression) */}
+      <BudgetProjectionPanel
+        barangMasuk={barangMasuk}
+        config={config}
+        onNavigate={onNavigate}
+      />
 
       {/* Critical Stock Table & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

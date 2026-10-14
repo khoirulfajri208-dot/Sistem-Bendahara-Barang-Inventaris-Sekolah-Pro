@@ -19,6 +19,7 @@ import {
   Award,
   Sparkles,
   Upload,
+  Zap,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { PengambilanATKRecord, PengambilanATKItem } from '../types';
@@ -29,7 +30,11 @@ import { WebcamCaptureModal } from '../components/WebcamCaptureModal';
 import { AdvancedExportModal } from '../components/AdvancedExportModal';
 import { AdvancedImportModal } from '../components/AdvancedImportModal';
 
-export const PengambilanATKPage: React.FC = () => {
+interface PengambilanATKPageProps {
+  onNavigate?: (page: any) => void;
+}
+
+export const PengambilanATKPage: React.FC<PengambilanATKPageProps> = ({ onNavigate }) => {
   const {
     pengambilanATK,
     items,
@@ -279,6 +284,16 @@ export const PengambilanATKPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('terminal_logistik')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs shadow-md transition cursor-pointer"
+              title="Buka Mode Kios Guru & Terminal Cepat"
+            >
+              <Zap className="w-4 h-4 fill-amber-950" /> Mode Kios Guru &amp; Terminal
+            </button>
+          )}
+
           <button
             onClick={() => setIsImportModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold transition shadow-xs"

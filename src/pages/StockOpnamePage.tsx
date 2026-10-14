@@ -272,6 +272,15 @@ export const StockOpnamePage: React.FC = () => {
             </button>
           )}
 
+          {activeTab === 'riwayat' && (
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200 text-xs font-bold transition shadow-2xs"
+            >
+              <Printer className="w-3.5 h-3.5 text-teal-700" /> Cetak Riwayat Opname
+            </button>
+          )}
+
           <button
             onClick={() => setIsImportModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold transition shadow-xs"

@@ -18,6 +18,7 @@ import {
   Plus,
   Minus,
   Trash2,
+  Zap,
 } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 import { PengambilanATKItem } from '../types';
@@ -28,11 +29,12 @@ import { QrScannerModal } from '../components/QrScannerModal';
 
 interface KioskPageProps {
   onExitKiosk: () => void;
+  onOpenTerminal?: () => void;
 }
 
 type KioskTab = 'ambil_atk' | 'cek_stok' | 'lapor_rusak';
 
-export const KioskPage: React.FC<KioskPageProps> = ({ onExitKiosk }) => {
+export const KioskPage: React.FC<KioskPageProps> = ({ onExitKiosk, onOpenTerminal }) => {
   const {
     config,
     users,
@@ -241,9 +243,20 @@ export const KioskPage: React.FC<KioskPageProps> = ({ onExitKiosk }) => {
             <QrCode className="w-4 h-4" />
           </button>
 
+          {onOpenTerminal && (
+            <button
+              onClick={onOpenTerminal}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition shadow-xs cursor-pointer"
+              title="Buka Terminal Masuk & Keluar Lengkap"
+            >
+              <Zap className="w-3.5 h-3.5 fill-amber-300" />
+              <span className="hidden sm:inline">Terminal Cepat</span>
+            </button>
+          )}
+
           <button
             onClick={onExitKiosk}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-900/40 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-700 text-xs font-bold transition shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-900/40 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-700 text-xs font-bold transition shadow-xs cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Keluar Kiosk
           </button>
